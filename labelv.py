@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-
 from math import *
 import numpy as np
 import cv2
@@ -9,35 +8,28 @@ import argparse
 import time
 
 def read_bboxes(image):
-	# choose the corners (or edges) of the tracking bbox
-	bbox1 = cv2.selectROI('tracking', image)
-	bbox2 = cv2.selectROI('tracking', image)
-	bbox3 = cv2.selectROI('tracking', image)
-	bbox4 = cv2.selectROI('tracking', image)
-	return bbox1, bbox2, bbox3, bbox4
+  # choose the corners (or edges) of the tracking bbox
+  bbox1 = cv2.selectROI('tracking', image)
+  bbox2 = cv2.selectROI('tracking', image)
+  bbox3 = cv2.selectROI('tracking', image)
+  bbox4 = cv2.selectROI('tracking', image)
+  return bbox1, bbox2, bbox3, bbox4
 
 if __name__ == '__main__':
   ap = argparse.ArgumentParser()
   ap.add_argument("-v", "--video", help="path to the video file")
-  ap.add_argument("-l", "--label", help="label of the object")
-  ap.add_argument("-fp", "--frame path", help="directory to save frames in")
+  ap.add_argument("-l", "--label", default='label', help="label of the object")
+  ap.add_argument("-fp", "--frame path", default='Images', help="directory to save frames in")
   ap.add_argument("-lp", "--label path", help="file to append labels to")
-  ap.add_argument("-fr", "--frame rate", type=int, help="rate to save frames and labels at. Every 1/fr is saved")
+  ap.add_argument("-fr", "--frame rate", type=int, default=1, help="rate to save frames and labels at. Every 1/fr is saved")
   ap.add_argument("-fn", "--file name", default="frame", help="base name for each frame (imporant to set or frames from the previous videos will be replaced")
   ap.add_argument("-o", "--output", default='output.avi', help="path to the output video")        
   args = vars(ap.parse_args())
 
-  if args.get('label', None) is None:
-    class_name = 'label'
-  else:
-    class_name = args['label']
+  class_name = args['label']
 
-  if args.get('frame path', None) is None:
-    print("frames are saved in Images/%sX.jpg"%args['file name'])
-    frame_path = 'Images'
-  else:
-    print("frames are saved in %s/%sX.jpg"%(args['frame path'],args['file name']))
-    frame_path = args['frame path']
+  print("frames are saved in %s/%sX.jpg"%(args['frame path'],args['file name']))
+  frame_path = args['frame path']
 
   if args.get('label path', None) is None: 
     print("labels are saved in labels/label.csv")
@@ -53,9 +45,6 @@ if __name__ == '__main__':
   else:
     camera = cv2.VideoCapture(args['video'])
 
-  if args.get('frame rate', None) is None:        
-    fr = 1
-  else:
     fr = args['frame rate']
 
   cv2.namedWindow("tracking")
