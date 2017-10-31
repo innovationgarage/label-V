@@ -8,11 +8,16 @@ setup(
     author='Saghar Asadi',
     author_email='saghar@innovationgarage.no',
     url='https://github.com/innovationgarage/label-V',
-    py_modeules=['labelv'],
-    install_requires=['numpy'],
+    py_modules=['labelv'],
+    classifiers=[
+        # "opencv-python",
+        # "opencv-contrib-python",
+        "argparse",
+        "numpy",
+    ],
     entry_points='''
     [console_scripts]
     labelv = labelv:main
-   '''
+    '''
 )
 
