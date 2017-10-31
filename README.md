@@ -6,7 +6,7 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
    - opencv-contrib-python
 
 ### Note:
-    Getting OpenCV video capture to wotk on an Ubuntu machine could be tricky. The pip installation never worked for me, so I ended up building bth openCV-python and openCV-contrib-python from source. (Read about it) [https://asadisaghar.github.io/video-labeler/].
+   Getting OpenCV video capture to work on an Ubuntu machine could be tricky. The pip installation never worked for me, so I ended up building bth openCV-python and openCV-contrib-python from source. 
 
 ## Quick start.
    - clone this repository and from the root directory run
