@@ -33,7 +33,7 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
    * -lp/label path: path to the file to save frame labels in (default: labels/label.csv)
    * -m/--mode: mode to open the labels file in, a for append, w for write (default: w)
    * -fr/-frame rate: rate to save frames and labels at. Every 1/fr is saved (default: 1)
-   * -fn/--file name: base name for each frame (imporant to set or frames from the previous videos will be replaced (default:'frame')
+   * -fn/--file name: base name for each frame (imporant to set or frames from the previous videos will be replaced (default: frame)
    * -o/--output: path to the output video (default: output.avi)
 
 ## More detailed explanation and show-case
