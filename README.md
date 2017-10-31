@@ -10,13 +10,13 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
 
 ## Quick start.
    - clone this repository and from the root directory run
-   ´´´
-   python labelv.py -v sample_video.mp4
-   ´´´
+   
+         python labelv.py -v sample_video.mp4
+   
    or simply run
-   ´´´
-   python labelv.py
-   ´´´
+   
+         python labelv.py
+   
    to use your default video device (/dev/video0)
 
    - draw four bounding boxes for the leading points around your object (press return after drawing each box)
