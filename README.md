@@ -38,4 +38,4 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
 
 ## More detailed explanation and show-case
 
-   (https://asadisaghar.github.io/video-labeler/)[https://asadisaghar.github.io/video-labeler/]
+   [https://asadisaghar.github.io/video-labeler/](https://asadisaghar.github.io/video-labeler/)
