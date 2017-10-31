@@ -6,7 +6,7 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
    - opencv-contrib-python
 
 ### Note:
-   Getting OpenCV video capture to work on an Ubuntu machine could be tricky. The pip installation never worked for me, so I ended up building bth openCV-python and openCV-contrib-python from source. 
+   Getting OpenCV video capture to work on an Ubuntu machine could be tricky. The pip installation never worked for me, so I ended up building both openCV-python and openCV-contrib-python from source. 
 
 ## Quick start.
    - clone this repository and from the root directory run
@@ -24,7 +24,7 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
      * press enter without a new label to use the previous label for the object
      * or enter the new label for the new object
    - press ESC to terminate the process
-   - view the screen capture on output.avi
+   - view the screen capture on _output.avi_
 
 ## Arguments
    * -v/--video: the input video you want to use for tracking/labeling task (default: video device)
