@@ -6,7 +6,9 @@ import sys
 import os
 import argparse
 import time
-
+import skvideo.io
+import skvideo.datasets
+        
 def read_bboxes(image):
   # choose the corners (or edges) of the tracking bbox
   bbox1 = cv2.selectROI('tracking', image)
@@ -23,7 +25,6 @@ ap.add_argument("-lp", "--label path", default='labels/label.csv', help="file to
 ap.add_argument("-m", "--mode", default='w', type=str,help="mode to open the labels file in, a for append, w for write")
 ap.add_argument("-fr", "--frame rate", type=int, default=1, help="rate to save frames and labels at. Every 1/fr is saved")
 ap.add_argument("-fn", "--file name", default="frame", help="base name for each frame (imporant to set or frames from the previous videos will be replaced")
-ap.add_argument("-o", "--output", default='output.avi', help="path to the output video")        
 args = vars(ap.parse_args())
 
 class_name = args['label']
@@ -36,44 +37,24 @@ flabels = open("%s"%args["label path"], args["mode"])
 if args['mode'] == 'w':
   flabels.write("filename,width,height,class,xmin,ymin,xmax,ymax\n")
 
-if args.get("video", None) is None:
-  camera = cv2.VideoCapture(0)
-  time.sleep(0.25)
-else:
-  camera = cv2.VideoCapture(args['video'])
-
-  fr = args['frame rate']
+camera = skvideo.io.vreader(args['video'])
+fr = args['frame rate']
 
 cv2.namedWindow("tracking")
 tracker = cv2.MultiTracker_create()
 init_once = False
 
 count = 0
-ok, image = camera.read()
-if not ok:
-  print('Failed to read video')
-  exit()
+bbox1 = bbox2 = bbox3 = bbox4 = None
 
-bbox1, bbox2, bbox3, bbox4 = read_bboxes(image)
+for image in camera:
+  if bbox1 is None:
+    bbox1, bbox2, bbox3, bbox4 = read_bboxes(image)
 
-# initialize the FourCC, video writer, dimensions of the frame, and
-# zeros array
-fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-writer = None
-(h, w) = (None, None)
-zeros = None
-
-while camera.isOpened():
-  ok, image = camera.read()
-  if not ok:
-    print('no image to read')
-    break
-
-  if ok:
-    count += 1
-    if count%fr==0:
-      # save the frame
-      cv2.imwrite(os.path.join(frame_path, "%s%d.jpg" %(args['file name'], count)), image)     # save frame as JPEG file
+  count += 1
+  if count%fr==0:
+    # save the frame
+    cv2.imwrite(os.path.join(frame_path, "%s%d.jpg" %(args['file name'], count)), image)     # save frame as JPEG file
           
   if not init_once:
     ok1 = tracker.add(cv2.TrackerMIL_create(), image, bbox1)
@@ -107,23 +88,10 @@ while camera.isOpened():
   cv2.putText(image, "Frame: " + str(count) + " Tracking " + class_name, (100,50), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (250,0,0), 2);
   cv2.imshow('tracking', image)
 
-  # Save video
-  if writer is None:
-    (h, w) = image.shape[:2]
-    writer = cv2.VideoWriter(args['output'], fourcc, 20, (w, h), True)
-    zeros = np.zeros((h, w), dtype="uint8")
-
-  output = np.zeros((h, w, 3), dtype="uint8")
-  output = image
-
-  # write the output frame to file
-  writer.write(output)
-
   # respond to keyboard interactions
   k = cv2.waitKey(1) & 0xFF
   if k == 27 : # ESC pressed
     cv2.destroyAllWindows()
-    writer.release()
     flabels.close()
     break 
   elif k == 32: # SPACE pressed
@@ -136,5 +104,4 @@ while camera.isOpened():
           
 # do a bit of cleanup
 cv2.destroyAllWindows()
-writer.release()
 flabels.close()
