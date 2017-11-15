@@ -20,5 +20,6 @@ setuptools.setup(name='labelv',
       entry_points='''
       [console_scripts]
       labelv = labelv.labelv:labelv
+      labelv-service = labelv.service:main
       '''
   )

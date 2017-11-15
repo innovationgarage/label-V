@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
+    <link href="http://hayageek.github.io/jQuery-Upload-File/4.0.11/uploadfile.css" rel="stylesheet">
+    <script src="http://hayageek.github.io/jQuery-Upload-File/4.0.11/jquery.uploadfile.min.js"></script>
+
+    <link type="text/css" rel="stylesheet" href="http://annotorious.github.com/latest/annotorious.css" />
+    <script type="text/javascript" src="http://annotorious.github.com/latest/annotorious.min.js"></script>
+    
+    <script>
+      function loadFrame() {
+        window.location.hash = JSON.stringify({video: videoId, frame:currentFrame});
+        $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
+      }
+      $(document).ready(function() {
+	$("#fileuploader").uploadFile({
+          url:"/video",
+          fileName:"file",
+          returnType: "json",
+          onSuccess:function(files,data,xhr,pd) {
+            videoId = data.id;
+            currentFrame = 0;
+            loadFrame();
+            console.log(data);
+          }
+        });
+        $("#next").click(function () {
+          currentFrame+=10;
+          loadFrame();
+        });
+        $("#prev").click(function () {
+          currentFrame-=10;
+          loadFrame();
+        });
+
+        if (window.location.hash != "") {
+          var args = JSON.parse(window.location.hash.substr(1));
+          videoId = args.video;
+          currentFrame = args.frame;
+          loadFrame();
+        }
+
+        $("#frame").on("load", function () {
+          anno.removeAll();
+          anno.makeAnnotatable($("#frame")[0]);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    Upload video: <div id="fileuploader">Upload</div>
+
+    <div>
+      <button id="prev">Prev</button>
+      <button id="next">Next</button>
+    </div>
+    <img id="frame" style="min-width:100px;"></img>
+    
+  </body>
+</html>
