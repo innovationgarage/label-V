@@ -1,7 +1,7 @@
 LabelV is a semi-automatic video annotation tool for computer vision training data generation
 
 ## Installation
-
+   sudo apt install ffmpeg
    pip install .
 
 ### Note:
