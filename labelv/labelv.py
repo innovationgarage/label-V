@@ -32,8 +32,15 @@ def labelv():
 
     print("frames are saved in %s/%sX.jpg"%(args['frame path'],args['file name']))
     frame_path = args['frame path']
-
+    if not os.path.exists(frame_path):
+      os.makedirs(frame_path)
     print("labels are saved in %s"%args["label path"])
+    if not os.path.exists(args["label path"]):
+      try:
+        os.makedirs(os.path.dirname(args["label path"]))
+      except OSError as exc:
+        if exc.errno != errno.EEXIST:
+          raise
     flabels = open("%s"%args["label path"], args["mode"])
     if args['mode'] == 'w':
       flabels.write("filename,width,height,class,xmin,ymin,xmax,ymax\n")
