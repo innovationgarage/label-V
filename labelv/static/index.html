@@ -6,11 +6,89 @@
 
     <link type="text/css" rel="stylesheet" href="http://annotorious.github.com/latest/annotorious.css" />
     <script type="text/javascript" src="http://annotorious.github.com/latest/annotorious.min.js"></script>
-    
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/async/2.6.0/async.min.js"></script>
+
+    <style>
+      #frame {
+        border: 2px solid white;
+      }
+      .modified {
+        border-color: red;
+      }
+    </style>
+
     <script>
+      sessionId = randomString(20);
+      videoId = null;
+      currentFrame = null;
+      modified = false;
+
+      function randomString(n) {
+        var r="";
+        while(n--)r+=String.fromCharCode((r=Math.random()*62|0,r+=r>9?(r<36?55:61):48));
+        return r;
+      }
+
+      imageLoaded = function () {};
+      $("#frame").on("load", function () { imageLoaded(); });
+
+      function setModified(m) {
+        modified = m;
+        $("#frame").toggleClass("modified", m);
+      };
+
+      anno.addHandler('onAnnotationRemoved', function(annotation) { setModified(true); });
+      anno.addHandler('onAnnotationCreated', function(annotation) { setModified(true); });
+      anno.addHandler('onAnnotationUpdated', function(annotation) { setModified(true); });
+
       function loadFrame() {
-        window.location.hash = JSON.stringify({video: videoId, frame:currentFrame});
-        $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
+        async.series([
+          function (cb) {
+            window.location.hash = JSON.stringify({video: videoId, frame:currentFrame});
+            imageLoaded = cb;
+            $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
+          },
+          function (cb) {
+            anno.removeAll();
+            anno.makeAnnotatable($("#frame")[0]);
+            $.getJSON('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), function (data) {
+              data.bboxes.map(function (bbox) {
+                anno.addAnnotation({
+                  src : $("#frame").attr('src'),
+                  text : '',
+                  shapes : [{
+                    type : 'rect',
+                    geometry : {x : bbox[0], y: bbox[1], width: bbox[2], height: bbox[3]}
+                  }]
+                });
+              });
+              setModified(false);
+              cb();
+            });             
+          }
+        ]);
+       }
+      function saveFrame(cb) {
+        var newBboxes = anno.getAnnotations().map(function (a) {
+          var g = a.shapes[0].geometry;
+          var w = $("#frame").innerWidth();
+          var h = $("#frame").innerHeight();
+          return [
+            Math.floor(g.x * w),
+            Math.floor(g.y * h),
+            Math.floor(g.width * w),
+            Math.floor(g.height * h)
+          ];
+        });
+        if (modified) {
+          console.log("SAVING MODIFICATIONS");
+          $.post('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), JSON.stringify(newBboxes), function (data) {
+            cb();
+          });
+        } else {
+          console.log("NO MODIFICATIONS TO SAVE");
+          cb();
+        }
       }
       $(document).ready(function() {
 	$("#fileuploader").uploadFile({
@@ -39,11 +117,6 @@
           currentFrame = args.frame;
           loadFrame();
         }
-
-        $("#frame").on("load", function () {
-          anno.removeAll();
-          anno.makeAnnotatable($("#frame")[0]);
-        });
       });
     </script>
   </head>

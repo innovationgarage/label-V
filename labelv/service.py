@@ -78,19 +78,20 @@ def get_frame_bboxes(video, session, frame):
     res = {"bboxes": []}
 
     session = session_path(session)
-    with open(session) as f:
-        data = json.load(f)
+    if os.path.exists(session):
+        with open(session) as f:
+            data = json.load(f)
 
-    frame = int(frame)
-    
-    keyframes = sorted(keyframe
-                       for keyframe in (int(key)
-                                        for key in data['keyframes'].iterkeys())
-                       if keyframe < frame)
+        frame = int(frame)
 
-    if keyframes:
-        keyframe = keyframes[-1]
-        res['bboxes'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)])[frame]
+        keyframes = sorted(keyframe
+                           for keyframe in (int(key)
+                                            for key in data['keyframes'].iterkeys())
+                           if keyframe < frame)
+
+        if keyframes:
+            keyframe = keyframes[-1]
+            res['bboxes'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
 
