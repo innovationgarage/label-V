@@ -8,12 +8,25 @@
     <script type="text/javascript" src="http://annotorious.github.com/latest/annotorious.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/async/2.6.0/async.min.js"></script>
 
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+
     <style>
       #frame {
         border: 2px solid white;
       }
-      .modified {
+      #frame.modified {
         border-color: red;
+      }
+      .wait-loading {
+        position: absolute;
+        z-index: 10;
+        margin-top: 30px;
+        margin-left: 30px;
+        color: white;
+        font-size: 200px;
+      }
+      .wait-loading.done {
+        display: none;
       }
     </style>
 
@@ -39,6 +52,7 @@
       anno.addHandler('onAnnotationUpdated', function(annotation) { setModified(true); });
 
       function loadFrame() {
+        $(".wait-loading").removeClass("done");
         async.series([
           function (cb) {
             window.location.hash = JSON.stringify({video: videoId, session: sessionId, frame:currentFrame});
@@ -62,6 +76,7 @@
                 });
               });
               setModified(false);
+              $(".wait-loading").addClass("done");
               cb();
             });             
           }
@@ -142,6 +157,7 @@
       <button id="prev">Prev</button>
       <button id="next">Next</button>
     </div>
+    <i class="fa fa-spinner fa-spin wait-loading" aria-hidden="true"></i>
     <img id="frame" style="min-width:100px;"></img>
     
   </body>
