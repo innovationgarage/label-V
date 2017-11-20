@@ -21,6 +21,8 @@
     KeyError: 5000
 """
 
+import json
+
 class Iterator(object):
     def __init__(self, itercls, args):
         self.iterator = iter(itercls(*args.args, **args.kw))
@@ -62,15 +64,16 @@ class Accessor(object):
             raise KeyError(idx)
     
 class Args(object):
-    __slots__ = ("args", "kw", "kw_tuple")
+    __slots__ = ("args", "kw", "repr", "hash")
     def __init__(self, *args, **kw):
         self.args = args
         self.kw = kw
-        self.kw_tuple = tuple(sorted(kw.items(),lambda a, b: cmp(a[0], b[0])))
+        self.repr = json.dumps((self.args, self.kw), sort_keys=True)
+        self.hash = hash(self.repr)
     def __hash__(self):
-        return hash((self.args, self.kw_tuple))
+        return self.hash
     def __cmp__(self, other):
-        return cmp((self.args, self.kw_tuple), (other.args, other.kw_tuple))
+        return cmp(self.repr, other.repr)
 
 class Store(object):
     def __init__(self, itercls, cachecls=None):

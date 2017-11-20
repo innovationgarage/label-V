@@ -29,9 +29,6 @@
         return r;
       }
 
-      imageLoaded = function () {};
-      $("#frame").on("load", function () { imageLoaded(); });
-
       function setModified(m) {
         modified = m;
         $("#frame").toggleClass("modified", m);
@@ -44,7 +41,7 @@
       function loadFrame() {
         async.series([
           function (cb) {
-            window.location.hash = JSON.stringify({video: videoId, frame:currentFrame});
+            window.location.hash = JSON.stringify({video: videoId, session: sessionId, frame:currentFrame});
             imageLoaded = cb;
             $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
           },
@@ -52,13 +49,15 @@
             anno.removeAll();
             anno.makeAnnotatable($("#frame")[0]);
             $.getJSON('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), function (data) {
+              var w = $("#frame").innerWidth();
+              var h = $("#frame").innerHeight();
               data.bboxes.map(function (bbox) {
                 anno.addAnnotation({
                   src : $("#frame").attr('src'),
                   text : '',
                   shapes : [{
                     type : 'rect',
-                    geometry : {x : bbox[0], y: bbox[1], width: bbox[2], height: bbox[3]}
+                    geometry : {x : bbox[0]/w, y: bbox[1]/h, width: bbox[2]/w, height: bbox[3]/h}
                   }]
                 });
               });
@@ -69,21 +68,28 @@
         ]);
        }
       function saveFrame(cb) {
-        var newBboxes = anno.getAnnotations().map(function (a) {
-          var g = a.shapes[0].geometry;
-          var w = $("#frame").innerWidth();
-          var h = $("#frame").innerHeight();
-          return [
-            Math.floor(g.x * w),
-            Math.floor(g.y * h),
-            Math.floor(g.width * w),
-            Math.floor(g.height * h)
-          ];
-        });
         if (modified) {
+          var newBboxes = anno.getAnnotations().map(function (a) {
+            var g = a.shapes[0].geometry;
+            var w = $("#frame").innerWidth();
+            var h = $("#frame").innerHeight();
+            return [
+              Math.floor(g.x * w),
+              Math.floor(g.y * h),
+              Math.floor(g.width * w),
+              Math.floor(g.height * h)
+            ];
+          });
           console.log("SAVING MODIFICATIONS");
-          $.post('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), JSON.stringify(newBboxes), function (data) {
-            cb();
+          $.ajax({
+            url: '/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(),
+            type: "POST",
+            data: JSON.stringify(newBboxes),
+            contentType:"application/json; charset=utf-8",
+            dataType:"json",
+            success: function (data) {
+              cb();
+            }
           });
         } else {
           console.log("NO MODIFICATIONS TO SAVE");
@@ -91,6 +97,10 @@
         }
       }
       $(document).ready(function() {
+        $("#frame").on("load", function () {
+          imageLoaded();
+        });
+
 	$("#fileuploader").uploadFile({
           url:"/video",
           fileName:"file",
@@ -103,17 +113,22 @@
           }
         });
         $("#next").click(function () {
-          currentFrame+=10;
-          loadFrame();
+          saveFrame(function () {
+            currentFrame+=10;
+            loadFrame();
+          });
         });
         $("#prev").click(function () {
-          currentFrame-=10;
-          loadFrame();
+          saveFrame(function () {
+            currentFrame-=10;
+            loadFrame();
+          });
         });
 
         if (window.location.hash != "") {
           var args = JSON.parse(window.location.hash.substr(1));
           videoId = args.video;
+          sessionId = args.session;
           currentFrame = args.frame;
           loadFrame();
         }

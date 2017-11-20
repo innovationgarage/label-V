@@ -16,22 +16,25 @@ class Tracker(object):
         self.frame = frame
         self.bboxes = bboxes
         self.initialized = False
+
+    def __iter__(self):
+        return self
         
     def next(self):
-        image = self.vide_accessor[self.frame]
+        image = self.video_accessor[self.frame]
 
         if not self.initialized:
             for bbox in self.bboxes:
-                if not tracker.add(cv2.TrackerMIL_create(), image, bbox):
+                if not self.tracker.add(cv2.TrackerMIL_create(), image, tuple(bbox)):
                     raise Exception("Unable to add tracker bbox")
             self.initialized = True
                 
-        ok, boxes = tracker.update(image)
+        ok, boxes = self.tracker.update(image)
         self.frame += 1
         if not ok:
             raise Exception("Unable to update tracker with current frame")
 
-        return bboxes
+        return boxes.tolist()
 
 video_store = ra.Store(skvideo.io.vreader)
 tracker_store = ra.Store(Tracker)
@@ -91,7 +94,7 @@ def get_frame_bboxes(video, session, frame):
 
         if keyframes:
             keyframe = keyframes[-1]
-            res['bboxes'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)])[frame]
+            res['bboxes'] = tracker_store(video_path(video), keyframe, data['keyframes'][str(keyframe)]['bboxes'])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
 
@@ -104,13 +107,17 @@ def set_frame_bboxes(video, session, frame):
             data = json.load(f)
 
     bboxes = request.get_json()
+
     if not bboxes:
-        data['keyframes'].remove(frame)
+        if frame in data['keyframes']:
+            data['keyframes'].remove(frame)
     else:
         data['keyframes'][frame] = {'bboxes': bboxes, 'computed': {}}
     
     with open(session, "w") as f:
         json.dump(data, f)
+
+    return Response(json.dumps({}), mimetype='text/json')
 
 @app.route('/')
 @app.route('/<path:path>')
