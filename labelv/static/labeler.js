@@ -1,7 +1,7 @@
 define([], function () {
   function Label(labeler, attrs) {
     this.labeler = labeler;
-    this.labelNode = $("<div class='label'></div>");
+    this.labelNode = $("<div class='label'><input type='text'></input></div>");
     this.labelNode.css({
       "-webkit-user-select": "none",
       "-khtml-user-select": "none",
@@ -30,6 +30,9 @@ define([], function () {
     $("body").mouseup(this._mouseUp);
     this.labelNode.click(this._click);
   };
+  Label.prototype.focus = function () {
+    this.labelNode.find("input").focus();
+  };    
   Label.prototype.update = function (p2) {
     this.p2 = p2;
     this.redraw();
@@ -52,6 +55,7 @@ define([], function () {
   Label.prototype.click = function (e) {
     this.selected = !this.selected;
     this.labelNode.toggleClass("selected", this.selected);
+    this.focus();
   };
   Label.prototype.mouseDown = function (e) {
     this.offset = this.labeler.imageNode.offset();
@@ -130,6 +134,9 @@ define([], function () {
     }
   };
   Labeler.prototype.mouseUp = function (e) {
+    if (this.currentLabel) {
+      this.currentLabel.focus();
+    }
     this.currentLabel = null;
   };
   Labeler.prototype.deleteLabels = function (test) {
