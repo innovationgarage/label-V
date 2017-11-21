@@ -49,9 +49,9 @@ define([
     if (!$(".timeslider .currentFrame").length) {
       $(".timeslider").append("<div class='currentFrame'></div>");
     }
-      var w = $(".timeslider").width();
-      var frames = parseInt(videoMetadata.video["@nb_frames"]);
-      $(".timeslider .currentFrame").css({left: (w * currentFrame / frames).toString() + "px"});
+    var w = $(".timeslider").width();
+    var frames = parseInt(videoMetadata.video["@nb_frames"]);
+    $(".timeslider .currentFrame").css({left: (w * currentFrame / frames).toString() + "px"});
   }
     
   function loadFrame() {
@@ -110,6 +110,14 @@ define([
     labeler = new Labeler($("#frame"));
     labeler.updateHandlers.push(function(event) { setModified(true); });
 
+    $(".timeslider").click(function (e) {
+      var offset = $(".timeslider").offset();
+      var w = $(".timeslider").width();
+      var frames = parseInt(videoMetadata.video["@nb_frames"]);
+      currentFrame = Math.round(frames * (e.pageX - offset.left) / w);
+      loadFrame();
+    });
+      
     $("#frame").on("load", function () {
       imageLoaded();
     });
