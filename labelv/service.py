@@ -159,7 +159,7 @@ def set_frame_bboxes(video, session, frame):
         if frame in data['keyframes']:
             del data['keyframes'][frame]
     else:
-        data['keyframes'][frame] = {'bboxes': bboxes, 'computed': {}}
+        data['keyframes'][frame] = {'bboxes': bboxes}
     
     with open(session, "w") as f:
         json.dump(data, f)
