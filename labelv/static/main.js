@@ -28,6 +28,21 @@ define([
     $(".wait-loading").toggleClass("done", !m);
   };
 
+  function loadMetadata() {
+    $.getJSON('/video/' + videoId + '/session/' + sessionId + '/metadata', function (data) {
+      $(".timeslider *").remove();
+      var w = $(".timeslider").width();
+      var frames = parseInt(data.video["@nb_frames"]);
+
+      data['keyframes'].sort();
+      data['keyframes'].map(function (keyframe) {
+        var frameNode = $("<div class='keyframe'></div>");
+        frameNode.css({left: (w * keyframe / frames).toString() + "px"});
+        $(".timeslider").append(frameNode);
+      });
+    });        
+  };
+    
   function loadFrame() {
     setLoading(true);
     async.series([
@@ -70,6 +85,7 @@ define([
         contentType:"application/json; charset=utf-8",
         dataType:"json",
         success: function (data) {
+          loadMetadata();
           cb();
         }
       });
@@ -128,6 +144,7 @@ define([
       videoId = args.video;
       sessionId = args.session;
       currentFrame = args.frame;
+      loadMetadata();
       loadFrame();
     }
   });

@@ -50,9 +50,10 @@ def video_path(id):
     assert '/' not in id
     return os.path.join('upload', 'video', id.encode('utf-8'))
 
-def session_path(id):
-    assert '/' not in id
-    return os.path.join('upload', 'session', id.encode('utf-8'))
+def session_path(videoid, sessionid):
+    assert '/' not in videoid
+    assert '/' not in sessionid
+    return os.path.join('upload', 'session', ("%s-%s" % (videoid, sessionid)).encode('utf-8'))
 
 ensuredirs("upload/video")
 ensuredirs("upload/session")
@@ -75,12 +76,24 @@ def get_frame_image(video, frame):
     frame_content = video_store(video_path(video))[int(frame)]
     retval, frame_img = cv2.imencode(".png", frame_content)
     return Response(frame_img.tobytes(), mimetype='image/png')
-    
+
+@app.route('/video/<video>/session/<session>/metadata', methods=['GET'])
+def get_metadata(video, session):
+    metadata = skvideo.io.ffprobe(video_path(video))
+    metadata['keyframes'] = []
+
+    session = session_path(video, session)
+    if os.path.exists(session):
+        with open(session) as f:
+            metadata['keyframes'] = [int(key) for key in json.load(f)['keyframes'].iterkeys()]
+
+    return Response(json.dumps(metadata), mimetype='text/json')
+
 @app.route('/video/<video>/session/<session>/bboxes/<frame>', methods=['GET'])
 def get_frame_bboxes(video, session, frame):
     res = {"bboxes": []}
 
-    session = session_path(session)
+    session = session_path(video, session)
     if os.path.exists(session):
         with open(session) as f:
             data = json.load(f)
@@ -100,7 +113,7 @@ def get_frame_bboxes(video, session, frame):
 
 @app.route('/video/<video>/session/<session>/bboxes/<frame>', methods=['POST'])
 def set_frame_bboxes(video, session, frame):
-    session = session_path(session)
+    session = session_path(video, session)
     data = {'keyframes': {}}
     if os.path.exists(session):
         with open(session) as f:

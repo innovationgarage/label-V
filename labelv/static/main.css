@@ -1,8 +1,3 @@
-.nav {
-  position: absolute;
-  right: 10px;
-  top: 70px;
-}
 .wait-loading {
   position: absolute;
   z-index: 10;
@@ -45,4 +40,25 @@
 }
 .ajax-file-upload-statusbar:nth-child(1) {
   display: block;
+}
+
+.nav {
+  position: absolute;
+  right: 2px;
+  top: 81px;
+}
+.timeslider {
+  position: absolute;
+  left: 2px;
+  right: 126px;
+  top: 81px;
+  height: 17px;
+  border: 1px solid #999999;
+}
+
+.timeslider .keyframe {
+  position: absolute;
+  height: 17px;
+  width: 2px;
+  background: red;
 }
