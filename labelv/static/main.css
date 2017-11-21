@@ -1,0 +1,25 @@
+.wait-loading {
+  position: absolute;
+  z-index: 10;
+  top: 50%;
+  left: 50%;
+  color: "#000000";
+  margin-left: -100px;
+  font-size: 200px;
+}
+.wait-loading.done {
+  display: none;
+}
+.labeler {
+  position: absolute;
+  overflow: auto;
+  border: 2px solid white;
+  bottom: 0;
+  top: 100px;
+  left: 0;
+  right: 0;
+  border: 2px solid white;
+}
+.labeler.modified {
+  border-color: red;
+}
