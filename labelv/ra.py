@@ -56,9 +56,11 @@ class Accessor(object):
         else:
             iterator = matching[-1]
         try:
-            while iterator.idx < idx:
-                iterator.next()
-            return iterator.next()
+            while iterator.idx <= idx:
+                item = iterator.next()
+                if self.cache:
+                    self.cache[iterator.idx] = item
+            return item
         except StopIteration:
             self.iterators.remove(iterator)
             raise KeyError(idx)

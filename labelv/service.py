@@ -12,10 +12,11 @@ app = Flask(__name__, static_folder=None)
 class Tracker(object):
     def __init__(self, video, frame, bboxes):
         self.tracker = cv2.MultiTracker_create()
-        self.video_accessor = video_store(video)
+        self.video_accessor = video_store(video_path(video))
         self.frame = frame
         self.bboxes = bboxes
         self.initialized = False
+        print "Starting new tracker for video %s based on keyframe %s" % (video, frame)
 
     def __iter__(self):
         return self
@@ -36,8 +37,36 @@ class Tracker(object):
 
         return boxes.tolist()
 
+class TrackerCache(object):
+    def __init__(self, video, frame, bboxes):
+        self.video = video
+        self.frame = frame
+        self.bboxes = bboxes
+        self.key = json.dumps(self.bboxes, sort_keys=True)
+        self.basepath = os.path.join('upload', 'tracker', self.video, str(self.frame), self.key)
+
+    def frame_path(self, frame):
+        return os.path.join(self.basepath, "%s.json" % frame)
+        
+    def __contains__(self, frame):
+        path = self.frame_path(frame)
+        exists = os.path.exists(path)
+        if not exists:
+            print "Cache miss for frame %s (%s)" % (frame, path)
+        return os.path.exists(self.frame_path(frame))
+    
+    def __getitem__(self, frame):
+        with open(self.frame_path(frame)) as f:
+            return json.load(f)
+    
+    def __setitem__(self, frame, bboxes):
+        path = self.frame_path(frame)
+        ensuredirs(os.path.split(path)[0])
+        with open(path, "w") as f:
+            json.dump(bboxes, f)
+    
 video_store = ra.Store(skvideo.io.vreader)
-tracker_store = ra.Store(Tracker)
+tracker_store = ra.Store(Tracker, TrackerCache)
 
 
 def ensuredirs(pth):
@@ -56,6 +85,7 @@ def session_path(videoid, sessionid):
     return os.path.join('upload', 'session', ("%s-%s" % (videoid, sessionid)).encode('utf-8'))
 
 ensuredirs("upload/video")
+ensuredirs("upload/tracker")
 ensuredirs("upload/session")
 
 
@@ -91,6 +121,9 @@ def get_metadata(video, session):
 
 @app.route('/video/<video>/session/<session>/bboxes/<frame>', methods=['GET'])
 def get_frame_bboxes(video, session, frame):
+    assert '/' not in video
+    assert '/' not in session
+    
     res = {"bboxes": [], 'keyframe': -1}
 
     session = session_path(video, session)
@@ -108,7 +141,7 @@ def get_frame_bboxes(video, session, frame):
         if keyframes:
             res['keyframe'] = keyframe = keyframes[-1]
 
-            res['bboxes'] = tracker_store(video_path(video), keyframe, data['keyframes'][str(keyframe)]['bboxes'])[frame]
+            res['bboxes'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)]['bboxes'])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
 
@@ -124,7 +157,7 @@ def set_frame_bboxes(video, session, frame):
 
     if not bboxes:
         if frame in data['keyframes']:
-            data['keyframes'].remove(frame)
+            del data['keyframes'][frame]
     else:
         data['keyframes'][frame] = {'bboxes': bboxes, 'computed': {}}
     
