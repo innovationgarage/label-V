@@ -9,7 +9,8 @@ define([
   modified = false;
   loading = false;
   labeler = null;
-
+  videoMetadata = null;
+    
   function randomString(n) {
     var r="";
     while(n--)r+=String.fromCharCode((r=Math.random()*62|0,r+=r>9?(r<36?55:61):48));
@@ -30,6 +31,7 @@ define([
 
   function loadMetadata() {
     $.getJSON('/video/' + videoId + '/session/' + sessionId + '/metadata', function (data) {
+      videoMetadata = data;          
       $(".timeslider *").remove();
       var w = $(".timeslider").width();
       var frames = parseInt(data.video["@nb_frames"]);
@@ -42,6 +44,15 @@ define([
       });
     });        
   };
+
+  function displayFrame() {
+    if (!$(".timeslider .currentFrame").length) {
+      $(".timeslider").append("<div class='currentFrame'></div>");
+    }
+      var w = $(".timeslider").width();
+      var frames = parseInt(videoMetadata.video["@nb_frames"]);
+      $(".timeslider .currentFrame").css({left: (w * currentFrame / frames).toString() + "px"});
+  }
     
   function loadFrame() {
     setLoading(true);
@@ -61,6 +72,7 @@ define([
           });
           setLoading(false);
           setModified(false);
+          displayFrame();
           cb();
         });             
       }

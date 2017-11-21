@@ -62,3 +62,10 @@
   width: 2px;
   background: red;
 }
+
+.timeslider .currentFrame {
+  position: absolute;
+  height: 17px;
+  width: 2px;
+  background: blue;
+}
