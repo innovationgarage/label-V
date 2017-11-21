@@ -1,3 +1,8 @@
+.nav {
+  position: absolute;
+  right: 10px;
+  top: 70px;
+}
 .wait-loading {
   position: absolute;
   z-index: 10;
@@ -22,4 +27,22 @@
 }
 .labeler.modified {
   border-color: red;
+}
+.uploader {
+}
+#fileuploader {
+  display: inline-block;
+  vertical-align: top;
+}
+.ajax-file-upload-container {
+  display: inline-block;
+  margin-top: 0;
+  vertical-align: top;
+}
+.ajax-file-upload-statusbar {
+  margin-top: 0;
+  display: none;
+}
+.ajax-file-upload-statusbar:nth-child(1) {
+  display: block;
 }

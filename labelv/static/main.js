@@ -97,13 +97,26 @@ define([
         console.log(data);
       }
     });
+
     $("#next").click(function () {
+      saveFrame(function () {
+        currentFrame+=1;
+        loadFrame();
+      });
+    });
+    $("#prev").click(function () {
+      saveFrame(function () {
+        currentFrame-=1;
+        loadFrame();
+      });
+    });
+    $("#fast_next").click(function () {
       saveFrame(function () {
         currentFrame+=10;
         loadFrame();
       });
     });
-    $("#prev").click(function () {
+    $("#fast_prev").click(function () {
       saveFrame(function () {
         currentFrame-=10;
         loadFrame();

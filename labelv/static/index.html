@@ -1,20 +1,27 @@
 <html>
   <head>
     <script src="https://code.jquery.com/jquery-3.2.1.min.js" integrity="sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=" crossorigin="anonymous"></script>
-    <link href="http://hayageek.github.io/jQuery-Upload-File/4.0.11/uploadfile.css" rel="stylesheet">
-    <script src="http://hayageek.github.io/jQuery-Upload-File/4.0.11/jquery.uploadfile.min.js"></script>
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/async/2.6.0/async.min.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <script src="http://malsup.github.io/jquery.form.js"></script>
+    <script src="http://hayageek.github.io/jQuery-Upload-File/4.0.11/jquery.uploadfile.min.js"></script>
+
     <script type="text/javascript" data-main="main" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.5/require.min.js"></script>
+    
+    <link href="http://hayageek.github.io/jQuery-Upload-File/4.0.11/uploadfile.css" rel="stylesheet">
+    <link type="text/css" rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
     <link type="text/css" rel="stylesheet" href="main.css" />
     <link type="text/css" rel="stylesheet" href="labeler.css" />
   </head>
   <body>
-    Upload video: <div id="fileuploader">Upload</div>
-
-    <div>
-      <button id="prev">Prev</button>
-      <button id="next">Next</button>
+    <div class="uploader">
+      <div id="fileuploader">Upload</div>
+    </div>
+    
+    <div class="nav">
+      <button id="fast_prev"><i class="fa fa-backward" aria-hidden="true"></i></button>
+      <button id="prev"><i class="fa fa-play fa-rotate-180" aria-hidden="true"></i></button>
+      <button id="next"><i class="fa fa-play" aria-hidden="true"></i></button>
+      <button id="fast_next"><i class="fa fa-forward" aria-hidden="true"></i></button>
     </div>
     <i class="fa fa-spinner fa-spin wait-loading" aria-hidden="true"></i>
     <img id="frame" style="min-width:100px;"></img>
