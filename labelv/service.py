@@ -91,7 +91,7 @@ def get_metadata(video, session):
 
 @app.route('/video/<video>/session/<session>/bboxes/<frame>', methods=['GET'])
 def get_frame_bboxes(video, session, frame):
-    res = {"bboxes": []}
+    res = {"bboxes": [], 'keyframe': -1}
 
     session = session_path(video, session)
     if os.path.exists(session):
@@ -103,10 +103,11 @@ def get_frame_bboxes(video, session, frame):
         keyframes = sorted(keyframe
                            for keyframe in (int(key)
                                             for key in data['keyframes'].iterkeys())
-                           if keyframe < frame)
+                           if keyframe <= frame)
 
         if keyframes:
-            keyframe = keyframes[-1]
+            res['keyframe'] = keyframe = keyframes[-1]
+
             res['bboxes'] = tracker_store(video_path(video), keyframe, data['keyframes'][str(keyframe)]['bboxes'])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
