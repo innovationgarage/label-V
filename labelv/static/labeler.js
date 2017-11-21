@@ -2,6 +2,7 @@ define([], function () {
   function Label(labeler, attrs) {
     this.labeler = labeler;
     this.labelNode = $("<div class='label'><input type='text'></input></div>");
+    this.titleNode = this.labelNode.find("input")
     this.labelNode.css({
       "-webkit-user-select": "none",
       "-khtml-user-select": "none",
@@ -9,47 +10,46 @@ define([], function () {
       "-o-user-select": "none",
       "user-select": "none"
     });
-    this.selected = false;
     this.labeler.labelsNode.append(this.labelNode);
 
-    $.extend(this, attrs);
-    if (!this.p2) {
-      this.p2 = $.extend({}, this.p1)
-    }
+    this.attrs = $.extend({}, attrs);
+    if (!this.attrs.title) this.attrs.title = '';
+    if (!this.attrs.selected) this.attrs.selected = false;
       
-    this.update(this.p2);
-    this.updateSides = null;
-
     this._mouseDown = this.mouseDown.bind(this);
     this._mouseMove = this.mouseMove.bind(this);
     this._mouseUp = this.mouseUp.bind(this);
     this._click = this.click.bind(this);
-
+    this._titleChange = this.titleChange.bind(this);
+      
     this.labelNode.mousedown(this._mouseDown);
     $("body").mousemove(this._mouseMove);
     $("body").mouseup(this._mouseUp);
     this.labelNode.click(this._click);
+    this.titleNode.change(this._titleChange);
+
+    this.selected = false;
+    this.updateSides = null;
+
+    this.redraw();
   };
+  Label.prototype.toJSON = function () {
+    return this.attrs;
+  };
+  Label.prototype.titleChange = function () {
+    this.attrs.title = this.titleNode.val();
+  };    
   Label.prototype.focus = function () {
     this.labelNode.find("input").focus();
   };    
-  Label.prototype.update = function (p2) {
-    this.p2 = p2;
-    this.redraw();
-  };
   Label.prototype.redraw = function () {
     this.labeler.updateHandlers.map(function (f) { f({label: self, event: 'change'}); });
-    var coords = {
-      left: Math.min(this.p1.x, this.p2.x),
-      right: Math.max(this.p1.x, this.p2.x),
-      top: Math.min(this.p1.y, this.p2.y),
-      bottom: Math.max(this.p1.y, this.p2.y)
-    };
+    this.titleNode.val(this.attrs.title);
     this.labelNode.css({
-      left: coords.left.toString() + "px",
-      width: (coords.right - coords.left).toString() + "px",
-      top: coords.top.toString() + "px",
-      height: (coords.bottom - coords.top).toString() + "px"
+      left: this.attrs.bbox[0].toString() + "px",
+      width: this.attrs.bbox[2].toString() + "px",
+      top: this.attrs.bbox[1].toString() + "px",
+      height: this.attrs.bbox[3].toString() + "px"
     });
   };
   Label.prototype.click = function (e) {
@@ -57,23 +57,48 @@ define([], function () {
     this.labelNode.toggleClass("selected", this.selected);
     this.focus();
   };
+  Label.prototype.initiateMouseResize = function (x, y) {
+    this.offset = this.labeler.imageNode.offset();
+    this.updateSides = {x:x, y:y};
+    this.coords = this.getBboxCoords();
+  };
   Label.prototype.mouseDown = function (e) {
     this.offset = this.labeler.imageNode.offset();
-    var x = e.pageX - this.offset.left;
-    var y = e.pageY - this.offset.top;
-    this.updateSides = {x:"p1", y:"p1"};
-
-    if (Math.abs(x - this.p1.x) > Math.abs(x - this.p2.x)) {
-      this.updateSides.x = "p2";
+    var mx = e.pageX - this.offset.left;
+    var my = e.pageY - this.offset.top;
+    var bbox = this.getBboxCoords();
+    var x = 0;
+    var y = 1;
+      
+    if (Math.abs(mx - bbox[0]) > Math.abs(mx - bbox[2])) {
+      x = 2;
     }
-    if (Math.abs(y - this.p1.y) > Math.abs(y - this.p2.y)) {
-      this.updateSides.y = "p2";
+    if (Math.abs(my - bbox[1]) > Math.abs(my - bbox[3])) {
+      y = 3;
     }
+    this.initiateMouseResize(x, y);
+  };
+  Label.prototype.getBboxCoords = function () {
+    return [
+      this.attrs.bbox[0],
+      this.attrs.bbox[1],
+      this.attrs.bbox[0] + this.attrs.bbox[2],
+      this.attrs.bbox[1] + this.attrs.bbox[3]
+    ];
+  };
+  Label.prototype.setBboxCoords = function (coords) {
+    l = Math.min(coords[0], coords[2]);
+    r = Math.max(coords[0], coords[2]);
+    t = Math.min(coords[1], coords[3]);
+    b = Math.max(coords[1], coords[3]);
+      
+    this.attrs.bbox = [l, t, r-l, b-t];
   };
   Label.prototype.mouseMove = function (e) {
     if (this.updateSides != null) {
-      this[this.updateSides.x].x = e.pageX - this.offset.left;
-      this[this.updateSides.y].y = e.pageY - this.offset.top;
+      this.coords[this.updateSides.x] = e.pageX - this.offset.left;
+      this.coords[this.updateSides.y] = e.pageY - this.offset.top;
+      this.setBboxCoords(this.coords);
       this.redraw();
     }
   };
@@ -105,12 +130,10 @@ define([], function () {
     this.labelerNode.prepend(this.labelsNode);
 
     this._mouseDown = this.mouseDown.bind(this);
-    this._mouseMove = this.mouseMove.bind(this);
     this._mouseUp = this.mouseUp.bind(this);
     this._keyUp = this.keyUp.bind(this);
 
     this.imageNode.mousedown(this._mouseDown);
-    $("body").mousemove(this._mouseMove);
     $("body").mouseup(this._mouseUp);
     $("body").keyup(this._keyUp);
     this.labels = [];
@@ -124,14 +147,10 @@ define([], function () {
   };
   Labeler.prototype.mouseDown = function (e) {
     this.offset = this.imageNode.offset();
-    this.currentLabel = this.addLabel({p1: {x:e.pageX - this.offset.left,
-                                            y:e.pageY - this.offset.top}});
-  };
-  Labeler.prototype.mouseMove = function (e) {
-    if (this.currentLabel != null) {
-      this.currentLabel.update({x:e.pageX - this.offset.left,
-                                y:e.pageY - this.offset.top});
-    }
+    this.currentLabel = this.addLabel({bbox: [e.pageX - this.offset.left,
+                                              e.pageY - this.offset.top,
+                                              0, 0]});
+    this.currentLabel.initiateMouseResize(2, 3);
   };
   Labeler.prototype.mouseUp = function (e) {
     if (this.currentLabel) {

@@ -68,7 +68,7 @@ define([
           var w = $("#frame").innerWidth();
           var h = $("#frame").innerHeight();
           data.bboxes.map(function (bbox) {
-            labeler.addLabel({p1: {x:bbox[0], y:bbox[1]}, p2: {x: bbox[0] + bbox[2], y: bbox[1] + bbox[3]}});
+            labeler.addLabel({bbox:bbox});
           });
           setLoading(false);
           setModified(false);
@@ -81,13 +81,7 @@ define([
   function saveFrame(cb) {
     if (modified) {
       var newBboxes = labeler.labels.map(function (a) {
-        var c = {
-          left: Math.min(a.p1.x, a.p2.x),
-          right: Math.max(a.p1.x, a.p2.x),
-          top: Math.min(a.p1.y, a.p2.y),
-          bottom: Math.max(a.p1.y, a.p2.y)
-        };
-        return [c.left, c.top, c.right - c.left, c.bottom - c.top];
+        return a.toJSON().bbox;
       });
       console.log("SAVING MODIFICATIONS");
       $.ajax({
