@@ -6,11 +6,12 @@ import cv2
 import skvideo.io
 import os.path
 import pkg_resources
+import hashlib
 
 app = Flask(__name__, static_folder=None)
 
 class Tracker(object):
-    def __init__(self, video, frame, labels):
+    def __init__(self, video, frame, labels, key):
         self.tracker = cv2.MultiTracker_create()
         self.video_accessor = video_store(video_path(video))
         self.frame = frame
@@ -44,11 +45,11 @@ class Tracker(object):
         return res
 
 class TrackerCache(object):
-    def __init__(self, video, frame, bboxes):
+    def __init__(self, video, frame, labels, key):
         self.video = video
         self.frame = frame
-        self.bboxes = bboxes
-        self.key = json.dumps(self.bboxes, sort_keys=True)
+        self.labels = labels
+        self.key = key
         self.basepath = os.path.join('upload', 'tracker', self.video, str(self.frame), self.key)
 
     def frame_path(self, frame):
@@ -65,11 +66,11 @@ class TrackerCache(object):
         with open(self.frame_path(frame)) as f:
             return json.load(f)
     
-    def __setitem__(self, frame, bboxes):
+    def __setitem__(self, frame, labels):
         path = self.frame_path(frame)
         ensuredirs(os.path.split(path)[0])
         with open(path, "w") as f:
-            json.dump(bboxes, f)
+            json.dump(labels, f)
     
 video_store = ra.Store(skvideo.io.vreader)
 tracker_store = ra.Store(Tracker, TrackerCache)
@@ -146,8 +147,8 @@ def get_frame_bboxes(video, session, frame):
 
         if keyframes:
             res['keyframe'] = keyframe = keyframes[-1]
-
-            res['labels'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)]['labels'])[frame]
+            frame_data = data['keyframes'][str(keyframe)]            
+            res['labels'] = tracker_store(video, keyframe, frame_data['data']['labels'], frame_data['key'])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
 
@@ -165,8 +166,10 @@ def set_frame_bboxes(video, session, frame):
         if frame in data['keyframes']:
             del data['keyframes'][frame]
     else:
+        frame_data = {'data': frame_data}
+        frame_data['key'] = hashlib.sha1(json.dumps(frame_data['data'], sort_keys=True)).hexdigest()
         data['keyframes'][frame] = frame_data
-    
+        
     with open(session, "w") as f:
         json.dump(data, f)
 
