@@ -67,8 +67,8 @@ define([
         $.getJSON('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), function (data) {
           var w = $("#frame").innerWidth();
           var h = $("#frame").innerHeight();
-          data.bboxes.map(function (bbox) {
-            labeler.addLabel({p1: {x:bbox[0], y:bbox[1]}, p2: {x: bbox[0] + bbox[2], y: bbox[1] + bbox[3]}});
+          data.labels.map(function (label) {
+            labeler.addLabel(label);
           });
           setLoading(false);
           setModified(false);
@@ -80,20 +80,14 @@ define([
    }
   function saveFrame(cb) {
     if (modified) {
-      var newBboxes = labeler.labels.map(function (a) {
-        var c = {
-          left: Math.min(a.p1.x, a.p2.x),
-          right: Math.max(a.p1.x, a.p2.x),
-          top: Math.min(a.p1.y, a.p2.y),
-          bottom: Math.max(a.p1.y, a.p2.y)
-        };
-        return [c.left, c.top, c.right - c.left, c.bottom - c.top];
+      var labels = labeler.labels.map(function (a) {
+        return a.toJSON();
       });
       console.log("SAVING MODIFICATIONS");
       $.ajax({
         url: '/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(),
         type: "POST",
-        data: JSON.stringify(newBboxes),
+        data: JSON.stringify({labels:labels}),
         contentType:"application/json; charset=utf-8",
         dataType:"json",
         success: function (data) {
