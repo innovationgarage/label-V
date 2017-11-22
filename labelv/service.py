@@ -10,11 +10,11 @@ import pkg_resources
 app = Flask(__name__, static_folder=None)
 
 class Tracker(object):
-    def __init__(self, video, frame, bboxes):
+    def __init__(self, video, frame, labels):
         self.tracker = cv2.MultiTracker_create()
         self.video_accessor = video_store(video_path(video))
         self.frame = frame
-        self.bboxes = bboxes
+        self.labels = labels
         self.initialized = False
         print "Starting new tracker for video %s based on keyframe %s" % (video, frame)
 
@@ -25,8 +25,8 @@ class Tracker(object):
         image = self.video_accessor[self.frame]
 
         if not self.initialized:
-            for bbox in self.bboxes:
-                if not self.tracker.add(cv2.TrackerMIL_create(), image, tuple(bbox)):
+            for label in self.labels:
+                if not self.tracker.add(cv2.TrackerMIL_create(), image, tuple(label['bbox'])):
                     raise Exception("Unable to add tracker bbox")
             self.initialized = True
                 
@@ -35,7 +35,13 @@ class Tracker(object):
         if not ok:
             raise Exception("Unable to update tracker with current frame")
 
-        return boxes.tolist()
+        res = []
+        for bbox, label in zip(boxes.tolist(), self.labels):
+            label = dict(label)
+            label['bbox'] = bbox
+            res.append(label)
+
+        return res
 
 class TrackerCache(object):
     def __init__(self, video, frame, bboxes):
@@ -124,7 +130,7 @@ def get_frame_bboxes(video, session, frame):
     assert '/' not in video
     assert '/' not in session
     
-    res = {"bboxes": [], 'keyframe': -1}
+    res = {"labels": [], 'keyframe': -1}
 
     session = session_path(video, session)
     if os.path.exists(session):
@@ -141,7 +147,7 @@ def get_frame_bboxes(video, session, frame):
         if keyframes:
             res['keyframe'] = keyframe = keyframes[-1]
 
-            res['bboxes'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)]['bboxes'])[frame]
+            res['labels'] = tracker_store(video, keyframe, data['keyframes'][str(keyframe)]['labels'])[frame]
 
     return Response(json.dumps(res), mimetype='text/json')
 
@@ -153,13 +159,13 @@ def set_frame_bboxes(video, session, frame):
         with open(session) as f:
             data = json.load(f)
 
-    bboxes = request.get_json()
+    frame_data = request.get_json()
 
-    if not bboxes:
+    if not frame_data.get("labels"):
         if frame in data['keyframes']:
             del data['keyframes'][frame]
     else:
-        data['keyframes'][frame] = {'bboxes': bboxes}
+        data['keyframes'][frame] = frame_data
     
     with open(session, "w") as f:
         json.dump(data, f)
