@@ -11,7 +11,7 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
    
     labelv-service
     
-   - go to [localhost:4711](localhost:4711)
+   - go to [localhost:4711](http://localhost:4711/)
 
 ## More detailed explanation and show-case
 
