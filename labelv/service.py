@@ -58,6 +58,8 @@ class Tracker(object):
                     max(bbox[0] + bbox[2] for bbox in bboxes),
                     max(bbox[1] + bbox[3] for bbox in bboxes)
                 ]            
+                node['args']['bbox'][2] -= node['args']['bbox'][0]
+                node['args']['bbox'][3] -= node['args']['bbox'][1]
         for path, label in labels.iteritems():
             replace(path, label, res)
         update_group_bboxes(res)
