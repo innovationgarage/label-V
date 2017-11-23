@@ -38,8 +38,33 @@ define([
     this.attrs.args = this.labels.attrs;
   };
   Labeler.prototype.keyUp = function (e) {
+    var filterSelected = function (child) { return child.selected; };
     if (e.which == 46) {
-      this.labels.deleteLabels(function (label) { return label.selected; });
+      this.labels.forEach({
+        recurse: true,
+        filter: filterSelected,
+        map: function (child) {
+          child.destroy();
+        }
+      });
+    } else if (e.which == 45) { // insert
+      this.labels.forEach({
+        recurse: true,
+        filter: filterSelected,
+        group: function (children, parent) {
+          if (children.length) {             
+            parent.groupChildren(children);
+          }
+        }
+      });        
+    } else if (e.which == 27) { // esc
+      this.labels.forEach({
+        recurse: true,
+        filter: filterSelected,
+        map: function (child) {
+          child.ungroup();
+        }
+      });
     }
   };
   Labeler.prototype.mouseDown = function (e) {

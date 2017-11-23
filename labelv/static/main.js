@@ -63,7 +63,6 @@ define([
         $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
       },
       function (cb) {
-        labeler.labels.deleteChildren();
         $.getJSON('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), function (data) {
           var w = $("#frame").innerWidth();
           var h = $("#frame").innerHeight();
