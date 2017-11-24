@@ -57,9 +57,10 @@ class Accessor(object):
             iterator = matching[-1]
         try:
             while iterator.idx <= idx:
+                itemidx = iterator.idx
                 item = iterator.next()
-                if self.cache:
-                    self.cache[iterator.idx] = item
+                if self.cache is not None:
+                    self.cache[itemidx] = item
             return item
         except StopIteration:
             self.iterators.remove(iterator)
