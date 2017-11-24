@@ -63,13 +63,10 @@ define([
         $("#frame").attr({src: "/video/" + videoId + "/image/" + currentFrame.toString()});
       },
       function (cb) {
-        labeler.deleteLabels();
         $.getJSON('/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(), function (data) {
           var w = $("#frame").innerWidth();
           var h = $("#frame").innerHeight();
-          data.labels.map(function (label) {
-            labeler.addLabel(label);
-          });
+          labeler.load(data.labels.args);
           setLoading(false);
           setModified(false);
           displayFrame();
@@ -80,9 +77,7 @@ define([
    }
   function saveFrame(cb) {
     if (modified) {
-      var labels = labeler.labels.map(function (a) {
-        return a.toJSON();
-      });
+      var labels = labeler.attrs;
       console.log("SAVING MODIFICATIONS");
       $.ajax({
         url: '/video/' + videoId + '/session/' + sessionId + '/bboxes/' + currentFrame.toString(),
@@ -102,7 +97,9 @@ define([
   }
   $(document).ready(function() {
     labeler = new Labeler($("#frame"));
-    labeler.updateHandlers.push(function(event) { setModified(true); });
+    labeler.labels.on('add', function(event) { setModified(true); });
+    labeler.labels.on('delete', function(event) { setModified(true); });
+    labeler.labels.on('change', function(event) { setModified(true); });
 
     $(".timeslider").click(function (e) {
       var offset = $(".timeslider").offset();

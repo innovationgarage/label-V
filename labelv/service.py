@@ -7,42 +7,123 @@ import skvideo.io
 import os.path
 import pkg_resources
 import hashlib
+import copy
+import contextlib
 
 app = Flask(__name__, static_folder=None)
+
+DEBUG=False
+
+@contextlib.contextmanager
+def savefile(*args):
+    args = [unicode(arg) for arg in args]
+    dirpath = os.path.join(*args[:-1]).encode("utf-8")
+    path = os.path.join(*args).encode("utf-8")
+    if not os.path.exists(dirpath):
+        os.makedirs(dirpath)
+    with open(path, "w") as f:
+        yield f
 
 class Tracker(object):
     def __init__(self, video, frame, labels, key):
         self.tracker = cv2.MultiTracker_create()
+        self.video = video
+        self.key = key
         self.video_accessor = video_store(video_path(video))
-        self.frame = frame
+        self._frame = self.frame = frame
         self.labels = labels
         self.initialized = False
         print "Starting new tracker for video %s based on keyframe %s" % (video, frame)
 
     def __iter__(self):
         return self
-        
+
+    def flatten_labels(self):
+        res = {}
+        def flatten(item, path=()):
+            if item['type'] == 'Label':
+                res[path] = item['args']
+            elif item['type'] == 'Group':
+                for idx, child in enumerate(item['args']['children']):
+                    itempath = path + (idx,)
+                    flatten(child, itempath)
+            else:
+                raise Exception('Unknown node type: %s' % item['type'])
+        flatten(self.labels)
+        return res
+
+    def unflatten_labels(self, labels):
+        res = copy.deepcopy(self.labels)
+        def replace(path, label, node):
+            if len(path) == 0:
+                node['args'] = label
+            else:
+                replace(path[1:], label, node['args']['children'][path[0]])
+        def update_group_bboxes(node):
+            if node['type'] == 'Label':
+                pass
+            elif node['type'] == 'Group':
+                for child in node['args']['children']:
+                    update_group_bboxes(child)
+                bboxes = [child['args']['bbox']
+                          for child in node['args']['children']]
+                node['args']['bbox'] = [
+                    min(bbox[0] for bbox in bboxes),
+                    min(bbox[1] for bbox in bboxes),
+                    max(bbox[0] + bbox[2] for bbox in bboxes),
+                    max(bbox[1] + bbox[3] for bbox in bboxes)
+                ]            
+                node['args']['bbox'][2] -= node['args']['bbox'][0]
+                node['args']['bbox'][3] -= node['args']['bbox'][1]
+        for path, label in labels.iteritems():
+            replace(path, label, res)
+        update_group_bboxes(res)
+        return res
+            
     def next(self):
         image = self.video_accessor[self.frame]
 
+        paths, labels = zip(*self.flatten_labels().items())
+        
         if not self.initialized:
-            for label in self.labels:
+            if DEBUG:
+                with savefile("debug", self.video, self._frame, self.key, "init.png") as f:
+                    dbgimg = image.copy()
+                    for idx, label in enumerate(labels):
+                        p1 = (int(label['bbox'][0]), int(label['bbox'][1]))
+                        p2 = (int(label['bbox'][0] + label['bbox'][2]), int(label['bbox'][1] + label['bbox'][3]))
+                        cv2.rectangle(dbgimg, p1, p2, (200,0,0), 3)                    
+                    retval, dbgimg = cv2.imencode(".png", dbgimg)
+                    f.write(dbgimg.tobytes())
+            
+            for label in labels:                    
                 if not self.tracker.add(cv2.TrackerMIL_create(), image, tuple(label['bbox'])):
                     raise Exception("Unable to add tracker bbox")
             self.initialized = True
                 
         ok, boxes = self.tracker.update(image)
+
+        if DEBUG:
+            with savefile("debug", self.video, self._frame, self.key, "%s.png" % self.frame) as f:
+                dbgimg = image.copy()
+                for bbox in boxes:
+                    p1 = (int(bbox[0]), int(bbox[1]))
+                    p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+                    cv2.rectangle(dbgimg, p1, p2, (200,0,0), 3)                    
+                retval, dbgimg = cv2.imencode(".png", dbgimg)
+                f.write(dbgimg.tobytes())
+            
         self.frame += 1
         if not ok:
             raise Exception("Unable to update tracker with current frame")
 
-        res = []
-        for bbox, label in zip(boxes.tolist(), self.labels):
+        res = {}
+        for path, label, bbox in zip(paths, labels, boxes.tolist()):
             label = dict(label)
             label['bbox'] = bbox
-            res.append(label)
-
-        return res
+            res[path] = label
+        
+        return self.unflatten_labels(res)
 
 class TrackerCache(object):
     def __init__(self, video, frame, labels, key):
@@ -60,6 +141,8 @@ class TrackerCache(object):
         exists = os.path.exists(path)
         if not exists:
             print "Cache miss for frame %s (%s)" % (frame, path)
+        else:
+            print "Cache hit for frame %s (%s)" % (frame, path)
         return os.path.exists(self.frame_path(frame))
     
     def __getitem__(self, frame):
@@ -147,8 +230,8 @@ def get_frame_bboxes(video, session, frame):
 
         if keyframes:
             res['keyframe'] = keyframe = keyframes[-1]
-            frame_data = data['keyframes'][str(keyframe)]            
-            res['labels'] = tracker_store(video, keyframe, frame_data['data']['labels'], frame_data['key'])[frame]
+            frame_data = data['keyframes'][str(keyframe)]
+            res['labels'] = tracker_store(video, keyframe, frame_data['data']['labels'], frame_data['key'])[frame - keyframe]
 
     return Response(json.dumps(res), mimetype='text/json')
 
@@ -162,13 +245,13 @@ def set_frame_bboxes(video, session, frame):
 
     frame_data = request.get_json()
 
-    if not frame_data.get("labels"):
-        if frame in data['keyframes']:
-            del data['keyframes'][frame]
-    else:
+    if frame_data and frame_data["labels"] and frame_data["labels"]['args'] and frame_data["labels"]['args']['children']:
         frame_data = {'data': frame_data}
         frame_data['key'] = hashlib.sha1(json.dumps(frame_data['data'], sort_keys=True)).hexdigest()
         data['keyframes'][frame] = frame_data
+    else:
+        if frame in data['keyframes']:
+            del data['keyframes'][frame]
         
     with open(session, "w") as f:
         json.dump(data, f)
