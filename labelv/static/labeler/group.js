@@ -67,6 +67,18 @@ define([
     }
     this.children.push(child);
     this.attrs.children.push({type:child.constructor.name, args:child.attrs});
+    // Update z-index
+    if (child.forEach) {
+      child.forEach({
+        map: function (child) {
+          if (!child.forEach) {
+            child.redraw();
+          }
+        }
+      })
+    } else {
+      child.redraw();
+    }      
     this.send('add', {label: child, parent: this});
   };
   Group.prototype.addLabel = function (attrs) {

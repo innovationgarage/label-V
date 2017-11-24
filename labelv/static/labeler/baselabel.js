@@ -80,11 +80,16 @@ define([], function () {
   BaseLabel.prototype.focus = function () {
     this.labelNode.find("input").focus();
   };    
+  BaseLabel.prototype.level = function () {
+    if (!this.parent) return 0;
+    return 1 + this.parent.level();
+  };
   BaseLabel.prototype.redraw = function () {
     this.send('change', {label: this});
     if (!this.isRoot) {
       this.titleNode.val(this.attrs.title);
       this.labelNode.css({
+        "z-index": this.level(),
         left: this.attrs.bbox[0].toString() + "px",
         width: this.attrs.bbox[2].toString() + "px",
         top: this.attrs.bbox[1].toString() + "px",
