@@ -1,0 +1,35 @@
+.labeler {
+}
+.labels {
+  width: 0;
+  height: 0;
+  position: relative;
+  overflow: visible;
+}
+.label {
+  position: absolute;
+  border: 2px solid red;
+}
+.label-Label {
+  z-index: 1;
+}
+.label-Group {
+   border-color: green; 
+}
+.label input, .label input:focus {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: none;
+  color: #ffffff;
+  pointer-events: none;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+  font-size: 16px;
+}
+.selected {
+  border-color: blue;
+}
