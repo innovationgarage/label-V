@@ -27,7 +27,8 @@ Conecpts:
 * Label - an object label for an object in the video, such as a chair, a lamp, a bike etc
 * Bbox - a bounding box around an object in the video
 * Title - a string describing a label
-* Group - a label that contains other groups and labels
+* Group - a label that contains other groups and labels. The bbox of a
+  group always exactly contains all the bboxes of its children.
 
 Whenever a video is uploaded it is saved under upload/video/VIDEO_ID.EXT
 where VIDEO_ID is a unique random string and EXT is the file format
