@@ -37,34 +37,43 @@ define([
     this.labels.load(attrs);
     this.attrs.args = this.labels.attrs;
   };
+  Labeler.prototype.filterSelected = function (child) { return child.selected; };
+  Labeler.prototype.deleteSelected = function () {
+    this.labels.forEach({
+      recurse: true,
+      filter: this.filterSelected,
+      map: function (child) {
+        child.destroy();
+      }
+    });
+  };
+  Labeler.prototype.groupSelected = function () {
+    this.labels.forEach({
+      recurse: true,
+      filter: this.filterSelected,
+      group: function (children, parent) {
+        if (children.length) {             
+          parent.groupChildren(children);
+        }
+      }
+    });        
+  };
+  Labeler.prototype.ungroupSelected = function () {
+    this.labels.forEach({
+      recurse: true,
+      filter: this.filterSelected,
+      map: function (child) {
+        child.ungroup();
+      }
+    });
+  };
   Labeler.prototype.keyUp = function (e) {
-    var filterSelected = function (child) { return child.selected; };
     if (e.which == 46) {
-      this.labels.forEach({
-        recurse: true,
-        filter: filterSelected,
-        map: function (child) {
-          child.destroy();
-        }
-      });
+      this.deleteSelected();
     } else if (e.which == 45) { // insert
-      this.labels.forEach({
-        recurse: true,
-        filter: filterSelected,
-        group: function (children, parent) {
-          if (children.length) {             
-            parent.groupChildren(children);
-          }
-        }
-      });        
+      this.groupSelected();
     } else if (e.which == 27) { // esc
-      this.labels.forEach({
-        recurse: true,
-        filter: filterSelected,
-        map: function (child) {
-          child.ungroup();
-        }
-      });
+      this.ungroupSelected();
     }
   };
   Labeler.prototype.mouseDown = function (e) {

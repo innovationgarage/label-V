@@ -125,6 +125,12 @@ define([
       }
     });
 
+    $("#group").click(function () {
+      labeler.groupSelected();
+    });
+    $("#ungroup").click(function () {
+      labeler.ungroupSelected();
+    });
     $("#next").click(function () {
       saveFrame(function () {
         currentFrame+=1;

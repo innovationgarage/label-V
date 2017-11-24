@@ -58,6 +58,9 @@ define([
   };
   Label.prototype.mouseUp = function (e) {
     this.updateSides = null;
+    if (this.attrs.bbox[2] == 0 || this.attrs.bbox[3] == 0) {
+      this.destroy();
+    }
   };
 
   return Label;
