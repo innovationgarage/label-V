@@ -15,7 +15,9 @@ LabelV is a semi-automatic video annotation tool for computer vision training da
 
 ## More detailed explanation and show-case
 
-   [https://asadisaghar.github.io/video-labeler/](https://asadisaghar.github.io/video-labeler/)
+   There is a [blog post](https://asadisaghar.github.io/video-labeler/) describing how this is implemented using OpenCV and how it can be used in generating training data for object detection algorithms.
+   
+   [![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/5-pyQ6Fg_p4/0.jpg)](https://www.youtube.com/watch?v=5-pyQ6Fg_p4)
 
 ## Data format
 
