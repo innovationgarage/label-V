@@ -17,37 +17,39 @@ def read_bboxes(image):
   bbox4 = cv2.selectROI('tracking', image)
   return bbox1, bbox2, bbox3, bbox4
 
-def labelv():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("-v", "--video", help="path to the video file")
-    ap.add_argument("-l", "--label", default='label', help="label of the object")
-    ap.add_argument("-fp", "--frame path", default='Images', help="directory to save frames in")
-    ap.add_argument("-lp", "--label path", default='labels/label.csv', help="file to append labels to")
-    ap.add_argument("-m", "--mode", default='w', type=str,help="mode to open the labels file in, a for append, w for write")
-    ap.add_argument("-fr", "--frame rate", type=int, default=1, help="rate to save frames and labels at. Every 1/fr is saved")
-    ap.add_argument("-fn", "--file name", default="frame", help="base name for each frame (imporant to set or frames from the previous videos will be replaced")
-    args = vars(ap.parse_args())
+# arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-v", "--video", help="path to the video file")
+ap.add_argument("-l", "--label", default='label', help="label of the object")
+ap.add_argument("-fp", "--frame path", default='Images', help="directory to save frames in")
+ap.add_argument("-lp", "--label path", default='labels/label.csv', help="file to append labels to")
+ap.add_argument("-m", "--mode", default='w', type=str,help="mode to open the labels file in, a for append, w for write")
+ap.add_argument("-fr", "--frame rate", type=int, default=1, help="rate to save frames and labels at. Every 1/fr is saved")
+ap.add_argument("-fn", "--file name", default="frame", help="base name for each frame (imporant to set or frames from the previous videos will be replaced")
+args = vars(ap.parse_args())
+class_name = args['label']
+print("frames are saved in %s/%sX.jpg"%(args['frame path'],args['file name']))
+frame_path = args['frame path']
+if not os.path.exists(frame_path):
+  os.makedirs(frame_path)
+  print("labels are saved in %s"%args["label path"])
+if not os.path.exists(args["label path"]):
+  try:
+    os.makedirs(os.path.dirname(args["label path"]))
+  except OSError as exc:
+    if exc.errno != errno.EEXIST:
+      raise
+flabels = open("%s"%args["label path"], args["mode"])
+if args['mode'] == 'w':
+  flabels.write("filename,width,height,class,xmin,ymin,xmax,ymax\n")
 
-    class_name = args['label']
+fr = args['frame rate']
 
-    print("frames are saved in %s/%sX.jpg"%(args['frame path'],args['file name']))
-    frame_path = args['frame path']
-    if not os.path.exists(frame_path):
-      os.makedirs(frame_path)
-    print("labels are saved in %s"%args["label path"])
-    if not os.path.exists(args["label path"]):
-      try:
-        os.makedirs(os.path.dirname(args["label path"]))
-      except OSError as exc:
-        if exc.errno != errno.EEXIST:
-          raise
-    flabels = open("%s"%args["label path"], args["mode"])
-    if args['mode'] == 'w':
-      flabels.write("filename,width,height,class,xmin,ymin,xmax,ymax\n")
+def read_video(args):
+    return  skvideo.io.vreader(args['video'])
 
-    camera = skvideo.io.vreader(args['video'])
-    fr = args['frame rate']
-
+camera = read_video(args)
+    
     cv2.namedWindow("tracking")
     tracker = cv2.MultiTracker_create()
     init_once = False
