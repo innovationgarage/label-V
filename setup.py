@@ -14,7 +14,7 @@ setuptools.setup(name='labelv',
           "opencv-contrib-python==3.3.0.10",
           "scipy==1.0.0",
           "sk-video==1.1.8",
-          "Flask==0.12.2"
+          "Flask==1.0"
       ],
       include_package_data=True,
       entry_points='''
